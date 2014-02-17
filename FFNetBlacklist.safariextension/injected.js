@@ -42,7 +42,7 @@ function blacklistClass(reveal)
 
 function checkForBlacklistedStories(blacklist)
 {
-    if (!blacklist || (!blacklist["users"] && !blacklist["stories"]))
+    if (!blacklist || (!blacklist["authors"] && !blacklist["stories"]))
     {
         console.log("Blacklist empty");
         console.log(blacklist);
@@ -53,7 +53,7 @@ function checkForBlacklistedStories(blacklist)
     {
         return;
     }
-    var storyNodesResult = document.evaluate("./div[a[starts-with(@href,'/s/')]]", contentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE)
+    var storyNodesResult = document.evaluate("./div[a[starts-with(@href,'/s/')]]", contentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE);
     for (var i=0; i<storyNodesResult.snapshotLength; i++)
     {
         var storyNode = storyNodesResult.snapshotItem(i);
@@ -61,6 +61,7 @@ function checkForBlacklistedStories(blacklist)
         var authorLinkNode = document.evaluate("./a[starts-with(@href,'/u/')]", storyNode, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
         var storyID = "";
         var authorID = "";
+
         if (storyLinkNode)
         {
             storyID = extractIDFromPathname(storyLinkNode.pathname);
@@ -69,17 +70,27 @@ function checkForBlacklistedStories(blacklist)
                 if (storyID in blacklist["stories"])
                 {
                     blacklistStory(storyNode);
+                    continue; // don't bother checking author if it's already blocked by story ID
+                }
+                else if (storyNode.getAttribute("class").indexOf(blacklistClass(blacklist_reveal)) !== 0)
+                {
+                    storyNode.setAttribute("class", storyNode.getAttribute("class").replace(blacklistClass(blacklist_reveal), ""));
                 }
             }
+
         }
-        else if (authorLinkNode)
+        if (authorLinkNode)
         {
             authorID = extractIDFromPathname(authorLinkNode.pathname);
             if (authorID)
             {
-                if (authorID in blacklist["users"])
+                if (authorID in blacklist["authors"])
                 {
-                    blacklistStory(storyMode);
+                    blacklistStory(storyNode);
+                }
+                else if (storyNode.getAttribute("class").indexOf(blacklistClass(blacklist_reveal)) !== 0)
+                {
+                    storyNode.setAttribute("class", storyNode.getAttribute("class").replace(blacklistClass(blacklist_reveal), ""));
                 }
             }
         }
@@ -88,8 +99,6 @@ function checkForBlacklistedStories(blacklist)
 
 function changeBlacklistMode()
 {
-    console.log("Got here with");
-    console.log(blacklist_reveal);
     var contentNode = document.getElementById("content_wrapper_inner");
     if (!contentNode)
     {
@@ -101,7 +110,6 @@ function changeBlacklistMode()
     for (var i=0; i<storyNodesResult.snapshotLength; i++)
     {
         storyNode = storyNodesResult.snapshotItem(i);
-        console.log(storyNode);
         storyNode.setAttribute("class", storyNode.getAttribute("class").replace(blacklistClass(!blacklist_reveal), blacklistClass(blacklist_reveal)));
     }
 }
@@ -116,7 +124,10 @@ function extractIDFromPathname(pathname)
 
 function blacklistStory(storyNode)
 {
-    storyNode.setAttribute("class", storyNode.getAttribute("class")+" "+blacklistClass(blacklist_reveal));
+    if (storyNode.getAttribute("class").indexOf(blacklistClass(blacklist_reveal)) !== 0)
+    { 
+        storyNode.setAttribute("class", storyNode.getAttribute("class")+" "+blacklistClass(blacklist_reveal)); 
+    }
 }
 
 function extractTargetStoryOrAuthorPath(target)
@@ -156,7 +167,6 @@ function handleContextMenu(event) {
     if (pathname)
     {
         safari.self.tab.setContextMenuEventUserInfo(event, {"mode":"menu-add", "pathname":pathname});
-        console.log(pathname);
     }
     else
     {

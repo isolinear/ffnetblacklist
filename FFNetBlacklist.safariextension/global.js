@@ -14,7 +14,7 @@ function globalSetup()
     }
     safari.application.addEventListener("message",processClientRequest,false);
     safari.application.addEventListener("contextmenu", handleContextMenu, false);
-    safari.application.addEventListener("command", performCommand, false); // this responds 
+    safari.application.addEventListener("command", performCommand, false); 
     safari.extension.settings.addEventListener("change", settingChange, false);
 
 
@@ -72,15 +72,32 @@ function handleContextMenu(event)
 {
     var mode = event.userInfo["mode"];
     var pathname = event.userInfo["pathname"];
+    var targetID = extractIDFromPathname(pathname);
     if (mode == "menu-add")
     {
         if (pathname.indexOf("/s/") === 0)
         {
-            event.contextMenu.appendContextMenuItem("blacklist-story", "FFNet: Blacklist story");
+            if (targetID in blacklist["stories"])
+            {
+                event.contextMenu.appendContextMenuItem("unblacklist-story", "FFNet: Unblacklist story");
+            }
+            else
+            {
+                event.contextMenu.appendContextMenuItem("blacklist-story", "FFNet: Blacklist story");
+            }
+            
         }
         else if (pathname.indexOf("/u/") === 0)
         {
-            event.contextMenu.appendContextMenuItem("blacklist-author", "FFNet: Blacklist author");
+            if (targetID in blacklist["authors"])
+            {
+                event.contextMenu.appendContextMenuItem("unblacklist-author", "FFNet: Unblacklist author");
+            }
+            else
+            {
+                event.contextMenu.appendContextMenuItem("blacklist-author", "FFNet: Blacklist author");
+            }
+            
         }
         
     }
@@ -97,38 +114,68 @@ function extractIDFromPathname(pathname)
 
 function performCommand(event) {
     var pathname;
+    var target_id;
     if (event.command === "blacklist-story") 
     {
-        console.log("blacklisting story");
-        console.log(event.userInfo["pathname"]);
         pathname = event.userInfo["pathname"];
         if (pathname.indexOf("/s/") === 0)
         {
-            var story_id = extractIDFromPathname(pathname);
-            if (story_id)
+            target_id = extractIDFromPathname(pathname);
+            if (target_id)
             {
-                blacklist["stories"][story_id] = 1;
+                blacklist["stories"][target_id] = 1;
                 localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
                 notifyAllClients(blacklist, "blacklist-updated");
             }
             else
             {
-                console.log("Failed to blacklist due to nonexistent story_id");
+                console.log("Failed to blacklist due to nonexistent target_id");
             }
         }
         
     }
     else if (event.command === "blacklist-author")
     {
-        console.log("blacklisting author");
-        console.log(event.userInfo["pathname"]);
         pathname = event.userInfo["pathname"];
         if (pathname.indexOf("/u/") === 0)
         {
-            var user_id = extractIDFromPathname(pathname);
-            if (user_id)
+            target_id = extractIDFromPathname(pathname);
+            if (target_id)
             {
-                blacklist["users"][user_id] = 1;
+                blacklist["authors"][target_id] = 1;
+                localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+                notifyAllClients(blacklist, "blacklist-updated");
+            }
+
+        }
+    }
+    else if (event.command === "unblacklist-story")
+    {
+        pathname = event.userInfo["pathname"];
+        if (pathname.indexOf("/s/") === 0)
+        {
+            target_id = extractIDFromPathname(pathname);
+            if (target_id && (target_id in blacklist["stories"]))
+            {
+                delete blacklist["stories"][target_id];
+                localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+                notifyAllClients(blacklist, "blacklist-updated");
+            }
+            else
+            {
+                console.log("Failed to unblacklist due to nonexistent target_id");
+            }
+        }
+    }
+    else if (event.command === "unblacklist-author")
+    {
+        pathname = event.userInfo["pathname"];
+        if (pathname.indexOf("/u/") === 0)
+        {
+            target_id = extractIDFromPathname(pathname);
+            if (target_id && (target_id in blacklist["authors"]))
+            {
+                delete blacklist["authors"][target_id];
                 localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
                 notifyAllClients(blacklist, "blacklist-updated");
             }
