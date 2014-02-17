@@ -35,6 +35,10 @@
 				<string>injected.js</string>
 			</array>
 		</dict>
+		<key>Stylesheets</key>
+		<array>
+			<string>ffblacklist-injected.css</string>
+		</array>
 	</dict>
 	<key>Description</key>
 	<string>Safari extension to blacklist authors or stories you don't want to see</string>

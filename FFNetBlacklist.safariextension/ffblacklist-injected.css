@@ -1,0 +1,7 @@
+.ffblacklist-hide {
+    display: none !important;
+}
+
+.ffblacklist-grayout {
+    background-color: #ccc !important;
+}
