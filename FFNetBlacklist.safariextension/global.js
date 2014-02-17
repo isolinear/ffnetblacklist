@@ -42,7 +42,10 @@ function notifyAllClients(data, msgID)
         for (var j = 0; j < browserWindow.tabs.length; j++)
         {
             var tab = browserWindow.tabs[j];
-            tab.page.dispatchMessage(msgID, data);
+            if (tab && tab.page)
+            {
+                tab.page.dispatchMessage(msgID, data);
+            }
         }
     }
 
@@ -70,6 +73,11 @@ function processClientRequest(msgEvent) {
 
 function handleContextMenu(event) 
 {
+    if (!event.userInfo)
+    {
+        // not an actual click on somewhere we've detected
+        return;
+    }
     var mode = event.userInfo["mode"];
     var pathname = event.userInfo["pathname"];
     var targetID = extractIDFromPathname(pathname);
