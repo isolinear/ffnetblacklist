@@ -5,3 +5,10 @@
 .ffblacklist-grayout {
     background-color: #ccc !important;
 }
+
+#ffmessage 
+{
+    padding: 1em; 
+    font-family: sans-serif; 
+    background-color: white;
+}

@@ -21,7 +21,29 @@ function handleExtensionMessage(msg_event) {
         {
             blacklist_reveal = msg_event.message;
             changeBlacklistMode();
-        }       
+        }
+        else if (msg_event.name === "display-raw-blacklist")
+        {
+            if(msg_event.message["show"])
+            {
+                var popup = document.createElement('div');
+                popup.id = 'ffmessage';
+                popup.innerHTML = '"' + msg_event.message["blacklist_raw"] + '"';
+                var body = document.getElementsByTagName('body')[0];
+                if (body)
+                {
+                    body.insertBefore(popup, body.children[0]);
+                }
+                
+            }
+            else
+            {
+                var target = document.getElementById("ffmessage");
+                if (target)
+                    target.parentNode.removeChild(target);
+            }
+            
+        }      
     }
 
 }

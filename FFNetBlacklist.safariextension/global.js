@@ -26,6 +26,19 @@ function settingChange(event)
     {
         notifyAllClients(event.newValue, "blacklist-reveal-updated");
     }
+    else if (event.key === "raw") 
+    {
+        var data = {};
+        if (event.newValue)
+        {
+            data = {"blacklist_raw":localStorage.getItem("blacklist"), "show":true};
+        }
+        else
+        {
+            data = {"show":false};
+        }
+        notifyAllClients(data, "display-raw-blacklist");
+    }
 }
  
 
