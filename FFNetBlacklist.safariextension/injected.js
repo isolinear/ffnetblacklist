@@ -28,7 +28,7 @@ function handleExtensionMessage(msg_event) {
             {
                 var popup = document.createElement('div');
                 popup.id = 'ffmessage';
-                popup.innerHTML = '"' + msg_event.message["blacklist_raw"] + '"';
+                popup.innerHTML = "'" + msg_event.message["blacklist_raw"] + "'";
                 var body = document.getElementsByTagName('body')[0];
                 if (body)
                 {
