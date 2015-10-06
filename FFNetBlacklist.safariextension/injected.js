@@ -4,6 +4,37 @@ function injectedSetup()
 {
     document.addEventListener("contextmenu", handleContextMenu, false);
     safari.self.addEventListener("message", handleExtensionMessage, false);
+    document.addEventListener('visibilitychange', handleVisibilityChange, false);
+    runBlacklist = runOnce(runBlacklist);
+    if (!document.hidden)
+    {
+        runBlacklist();
+    }
+    
+}
+
+function handleVisibilityChange()
+{
+    if (!document.hidden)
+    {
+        runBlacklist();
+    }
+}
+
+function runOnce(fn) {
+    var called = false;
+    return function() {
+        if (!called) {
+            called = true;
+            return fn();
+        }
+        return;
+    }
+}
+
+function runBlacklist()
+{
+    console.log("retrieving blacklist");
     safari.self.tab.dispatchMessage("get-blacklist","");
     safari.self.tab.dispatchMessage("get-blacklist-reveal","");
 }
@@ -192,12 +223,14 @@ function handleContextMenu(event) {
     }
     else
     {
-        console.log("Fail");
+        console.log("Context Fail");
         console.log(event.target);
     }
 }
 
 if (window.top === window)
 {
+
+    //console.log("Injecting code...")
     injectedSetup();
 }
