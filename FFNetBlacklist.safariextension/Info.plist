@@ -5,7 +5,7 @@
 	<key>Author</key>
 	<string>Vykor</string>
 	<key>Builder Version</key>
-	<string>11601.1.56</string>
+	<string>12603.2.4</string>
 	<key>CFBundleDisplayName</key>
 	<string>FFNetBlacklist</string>
 	<key>CFBundleIdentifier</key>
@@ -29,6 +29,10 @@
 		<array>
 			<string>https://www.fanfiction.net/s/*</string>
 			<string>http://www.fanfiction.net/s/*</string>
+			<string>http://archiveofourown.org/works/*/chapters/*</string>
+			<string>https://archiveofourown.org/works/*/chapters/*</string>
+			<string>http://archiveofourown.org/works/*view_full*</string>
+			<string>https://archiveofourown.org/works/*view_full*</string>
 		</array>
 		<key>Scripts</key>
 		<dict>
@@ -56,6 +60,8 @@
 			<array>
 				<string>*.fanfiction.net</string>
 				<string>fanfiction.net</string>
+				<string>*.archiveofourown.org</string>
+				<string>archiveofourown.org</string>
 			</array>
 			<key>Include Secure Pages</key>
 			<true/>

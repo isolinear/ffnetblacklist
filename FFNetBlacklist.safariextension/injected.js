@@ -95,6 +95,76 @@ function blacklistClass(reveal)
 
 function checkForBlacklistedStories(blacklist)
 {
+    if (window.document.baseURI.includes("www.fanfiction.net"))
+    {
+        return checkForBlacklistedStoriesFFNet(blacklist);
+    }
+    else if(window.document.baseURI.includes("archiveofourown.org"))
+    {
+        return checkForBlacklistedStoriesAO3(blacklist)
+    }
+}
+
+function checkForBlacklistedStoriesAO3(blacklist)
+{
+    if (!blacklist || (!blacklist["ao3_authors"] && !blacklist["ao3_stories"]))
+    {
+        console.log("Blacklist empty");
+        console.log(blacklist);
+        return;
+    }
+    var contentNode = document.getElementById("main");
+    if (!contentNode)
+    {
+        return;
+    }
+    var storyNodesResult = document.evaluate("./ol/li[contains(@class, 'work')]", contentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE);
+    for (var i=0; i<storyNodesResult.snapshotLength; i++)
+    {
+        var storyNode = storyNodesResult.snapshotItem(i);
+        var storyLinkNode = document.evaluate("./div/h4[contains(@class, 'heading')]/a[contains(@href,'/works/')]", storyNode, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+        var authorLinkNode = document.evaluate("./div/h4[contains(@class, 'heading')]/a[contains(@rel,'author')]", storyNode, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+        var storyID = "";
+        var authorID = "";
+
+        if (storyLinkNode)
+        {
+            storyID = extractAO3WorkIDFromPathname(storyLinkNode.pathname);
+            if (storyID)
+            {
+                if (storyID in blacklist["ao3_stories"])
+                {
+                    blacklistStory(storyNode);
+                    continue; // don't bother checking author if it's already blocked by story ID
+                }
+                else if (storyNode.getAttribute("class").indexOf(blacklistClass(blacklist_reveal)) !== 0)
+                {
+                    storyNode.setAttribute("class", storyNode.getAttribute("class").replace(blacklistClass(blacklist_reveal), ""));
+                }
+            }
+
+        }
+        if (authorLinkNode)
+        {
+            authorID = extractAO3WorkIDFromPathname(authorLinkNode.pathname);
+            if (authorID)
+            {
+                if (authorID in blacklist["ao3_authors"])
+                {
+                    blacklistStory(storyNode);
+                }
+                else if (storyNode.getAttribute("class").indexOf(blacklistClass(blacklist_reveal)) !== 0)
+                {
+                    storyNode.setAttribute("class", storyNode.getAttribute("class").replace(blacklistClass(blacklist_reveal), ""));
+                }
+            }
+        }
+    }
+}
+
+function checkForBlacklistedStoriesFFNet(blacklist)
+{
+
     if (!blacklist || (!blacklist["authors"] && !blacklist["stories"]))
     {
         console.log("Blacklist empty");
@@ -152,6 +222,35 @@ function checkForBlacklistedStories(blacklist)
 
 function changeBlacklistMode()
 {
+    if (window.document.baseURI.includes("www.fanfiction.net"))
+    {
+        return changeBlacklistModeFFNet();
+    }
+    else if(window.document.baseURI.includes("archiveofourown.org"))
+    {
+        return changeBlacklistModeAO3()
+    }
+}
+
+function changeBlacklistModeAO3()
+{
+    var contentNode = document.getElementById("main");
+    if (!contentNode)
+    {
+        console.log("Fail");
+        return;
+    }
+    var storyNodesResult = document.evaluate("./ol/li[contains(@class, '" + blacklistClass(!blacklist_reveal) + "')]", contentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE);
+    var storyNode;
+    for (var i=0; i<storyNodesResult.snapshotLength; i++)
+    {
+        storyNode = storyNodesResult.snapshotItem(i);
+        storyNode.setAttribute("class", storyNode.getAttribute("class").replace(blacklistClass(!blacklist_reveal), blacklistClass(blacklist_reveal)));
+    }
+}
+
+function changeBlacklistModeFFNet()
+{
     var contentNode = document.getElementById("content_wrapper_inner");
     if (!contentNode)
     {
@@ -174,6 +273,28 @@ function extractIDFromPathname(pathname)
     return path_id;
 
 }
+
+function extractAO3WorkIDFromPathname(pathname)
+{
+    if (pathname.includes("works"))
+    {
+        var work_id = /works\/(\d+)/.exec(pathname);
+        if (work_id)
+        {
+            return work_id[1];
+        }
+        else
+        {
+            return null;
+        }
+    }
+    else if (pathname.includes("users"))
+    {
+        return pathname;
+    }
+    return null;
+}
+
 
 function blacklistStory(storyNode)
 {
@@ -215,11 +336,51 @@ function extractTargetStoryOrAuthorPath(target)
     return pathname;
 }
 
-function handleContextMenu(event) {
+function extractAO3TargetStoryOrAuthorPath(target)
+{
+    var pathname = "";
+    if (!target)
+    {
+        return "";
+    }
+    if (target.nodeName === "A")
+    {
+        var storyNode = document.evaluate("./ancestor::li[contains(@class, 'work') and @role='article']", target, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+        if (storyNode && (target.pathname.includes("/works/") || target.pathname.includes("/users/")))
+            pathname = target.pathname;
+    }
+    else if (target.nodeName === "P" || target.nodeName === "BLOCKQUOTE")
+    {
+        var storyLinkNode = document.evaluate("./ancestor::li[contains(@class, 'work') and @role='article']//h4/a[contains(@href, '/works/')]", target, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+        if (storyLinkNode)
+        {
+            pathname = storyLinkNode.pathname;
+        }
+
+    }
+
+    return pathname;
+}
+
+function handleContextMenu(event)
+{
+
+    if (event.target.baseURI.includes("www.fanfiction.net"))
+    {
+        showFFNetContextMenu(event);
+    }
+    else if(event.target.baseURI.includes("archiveofourown.org"))
+    {
+        showAO3ContextMenu(event)
+    }
+}
+
+function showFFNetContextMenu(event)
+{
     var pathname = extractTargetStoryOrAuthorPath(event.target);
     if (pathname)
     {
-        safari.self.tab.setContextMenuEventUserInfo(event, {"mode":"menu-add", "pathname":pathname});
+        safari.self.tab.setContextMenuEventUserInfo(event, {"mode":"menu-add", "pathname":pathname, "baseURI":event.target.baseURI});
     }
     else
     {
@@ -227,6 +388,22 @@ function handleContextMenu(event) {
         console.log(event.target);
     }
 }
+
+function showAO3ContextMenu(event)
+{
+    var pathname = extractAO3TargetStoryOrAuthorPath(event.target);
+    if (pathname)
+    {
+        var data = {"mode":"menu-add", "pathname":pathname, "baseURI":event.target.baseURI};
+        safari.self.tab.setContextMenuEventUserInfo(event, data);
+    }
+    else
+    {
+        console.log("Context Fail");
+        console.log(event.target);
+    }
+}
+
 
 if (window.top === window)
 {

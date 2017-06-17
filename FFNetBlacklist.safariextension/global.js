@@ -6,12 +6,21 @@ function globalSetup()
     if (blacklist)
     {
         blacklist = JSON.parse(blacklist);
+        if (!blacklist["ao3_stories"])
+        {
+            blacklist["ao3_stories"] = {};
+        }
+        if (!blacklist["ao3_authors"])
+        {
+            blacklist["ao3_authors"] = {};
+        }
     }
     else
     {
-        blacklist = {"stories":{}, "authors":{}};
+        blacklist = {"stories":{}, "authors":{}, "ao3_stories":{}, "ao3_authors":{}};
         //localStorage.blacklist = JSON.stringify(blacklist);
     }
+
     safari.application.addEventListener("message",processClientRequest,false);
     safari.application.addEventListener("contextmenu", handleContextMenu, false);
     safari.application.addEventListener("command", performCommand, false); 
@@ -92,37 +101,84 @@ function handleContextMenu(event)
         return;
     }
     var mode = event.userInfo["mode"];
-    var pathname = event.userInfo["pathname"];
-    var targetID = extractIDFromPathname(pathname);
+    var site = event.userInfo["baseURI"]
     if (mode == "menu-add")
     {
-        if (pathname.indexOf("/s/") === 0)
+        if (site.includes("fanfiction.net"))
         {
-            if (targetID in blacklist["stories"])
-            {
-                event.contextMenu.appendContextMenuItem("unblacklist-story", "FFNet: Unblacklist story");
-            }
-            else
-            {
-                event.contextMenu.appendContextMenuItem("blacklist-story", "FFNet: Blacklist story");
-            }
-            
+            handleFFNetContextMenu(event)
         }
-        else if (pathname.indexOf("/u/") === 0)
+        else if (site.includes("archiveofourown.org"))
         {
-            if (targetID in blacklist["authors"])
-            {
-                event.contextMenu.appendContextMenuItem("unblacklist-author", "FFNet: Unblacklist author");
-            }
-            else
-            {
-                event.contextMenu.appendContextMenuItem("blacklist-author", "FFNet: Blacklist author");
-            }
-            
+            handleAO3ContextMenu(event)
         }
         
     }
 
+}
+
+function handleFFNetContextMenu(event)
+{
+
+    var pathname = event.userInfo["pathname"];
+    var targetID = extractIDFromPathname(pathname);
+    if (pathname.indexOf("/s/") === 0)
+    {
+        if (targetID in blacklist["stories"])
+        {
+            event.contextMenu.appendContextMenuItem("unblacklist-story", "FFNet: Unblacklist story");
+        }
+        else
+        {
+            event.contextMenu.appendContextMenuItem("blacklist-story", "FFNet: Blacklist story");
+        }
+
+    }
+    else if (pathname.indexOf("/u/") === 0)
+    {
+        if (targetID in blacklist["authors"])
+        {
+            event.contextMenu.appendContextMenuItem("unblacklist-author", "FFNet: Unblacklist author");
+        }
+        else
+        {
+            event.contextMenu.appendContextMenuItem("blacklist-author", "FFNet: Blacklist author");
+        }
+
+    }
+}
+
+function handleAO3ContextMenu(event)
+{
+    var mode = event.userInfo["mode"];
+    var pathname = event.userInfo["pathname"];
+    var targetID = extractAO3WorkIDFromPathname(pathname);
+    console.log("p1", pathname);
+    console.log(event.userInfo);
+    if (pathname.indexOf("/works/") === 0)
+    {
+        if (targetID in blacklist["ao3_stories"])
+        {
+            event.contextMenu.appendContextMenuItem("unblacklist-story", "AO3: Unblacklist story");
+        }
+        else
+        {
+            event.contextMenu.appendContextMenuItem("blacklist-story", "AO3: Blacklist story");
+        }
+
+    }
+    else if (pathname.indexOf("/users/") === 0)
+    {
+        if (targetID in blacklist["ao3_authors"])
+        {
+            event.contextMenu.appendContextMenuItem("unblacklist-author", "AO3: Unblacklist author");
+        }
+        else
+        {
+            event.contextMenu.appendContextMenuItem("blacklist-author", "AO3: Blacklist author");
+        }
+
+    }
 }
 
 function extractIDFromPathname(pathname)
@@ -133,74 +189,211 @@ function extractIDFromPathname(pathname)
 
 }
 
-function performCommand(event) {
+function blacklistFFNetStory(event)
+{
     var pathname;
     var target_id;
-    if (event.command === "blacklist-story") 
+    pathname = event.userInfo["pathname"];
+    if (pathname.indexOf("/s/") === 0)
     {
-        pathname = event.userInfo["pathname"];
-        if (pathname.indexOf("/s/") === 0)
+        target_id = extractIDFromPathname(pathname);
+        if (target_id)
         {
-            target_id = extractIDFromPathname(pathname);
-            if (target_id)
-            {
-                blacklist["stories"][target_id] = 1;
-                localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
-                notifyAllClients(blacklist, "blacklist-updated");
-            }
-            else
-            {
-                console.log("Failed to blacklist due to nonexistent target_id");
-            }
+            blacklist["stories"][target_id] = 1;
+            localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+            notifyAllClients(blacklist, "blacklist-updated");
         }
-        
-    }
-    else if (event.command === "blacklist-author")
-    {
-        pathname = event.userInfo["pathname"];
-        if (pathname.indexOf("/u/") === 0)
+        else
         {
-            target_id = extractIDFromPathname(pathname);
-            if (target_id)
-            {
-                blacklist["authors"][target_id] = 1;
-                localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
-                notifyAllClients(blacklist, "blacklist-updated");
-            }
+            console.log("Failed to blacklist due to nonexistent target_id");
+        }
+    }
+}
 
-        }
-    }
-    else if (event.command === "unblacklist-story")
+function blacklistFFNetAuthor(event)
+{
+    var pathname;
+    var target_id;
+    pathname = event.userInfo["pathname"];
+    if (pathname.indexOf("/u/") === 0)
     {
-        pathname = event.userInfo["pathname"];
-        if (pathname.indexOf("/s/") === 0)
+        target_id = extractIDFromPathname(pathname);
+        if (target_id)
         {
-            target_id = extractIDFromPathname(pathname);
-            if (target_id && (target_id in blacklist["stories"]))
-            {
-                delete blacklist["stories"][target_id];
-                localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
-                notifyAllClients(blacklist, "blacklist-updated");
-            }
-            else
-            {
-                console.log("Failed to unblacklist due to nonexistent target_id");
-            }
+            blacklist["authors"][target_id] = 1;
+            localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+            notifyAllClients(blacklist, "blacklist-updated");
         }
-    }
-    else if (event.command === "unblacklist-author")
-    {
-        pathname = event.userInfo["pathname"];
-        if (pathname.indexOf("/u/") === 0)
-        {
-            target_id = extractIDFromPathname(pathname);
-            if (target_id && (target_id in blacklist["authors"]))
-            {
-                delete blacklist["authors"][target_id];
-                localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
-                notifyAllClients(blacklist, "blacklist-updated");
-            }
 
+    }
+}
+
+function unblacklistFFNetStory(event)
+{
+    var pathname;
+    var target_id;
+    pathname = event.userInfo["pathname"];
+    if (pathname.indexOf("/s/") === 0)
+    {
+        target_id = extractIDFromPathname(pathname);
+        if (target_id && (target_id in blacklist["stories"]))
+        {
+            delete blacklist["stories"][target_id];
+            localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+            notifyAllClients(blacklist, "blacklist-updated");
+        }
+        else
+        {
+            console.log("Failed to unblacklist due to nonexistent target_id");
         }
     }
+}
+
+function unblacklistFFNetAuthor(event)
+{
+    var pathname;
+    var target_id;
+    pathname = event.userInfo["pathname"];
+    if (pathname.indexOf("/u/") === 0)
+    {
+        target_id = extractIDFromPathname(pathname);
+        if (target_id && (target_id in blacklist["authors"]))
+        {
+            delete blacklist["authors"][target_id];
+            localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+            notifyAllClients(blacklist, "blacklist-updated");
+        }
+
+    }
+}
+
+function extractAO3WorkIDFromPathname(pathname)
+{
+    if (pathname.includes("works"))
+    {
+        var work_id = /works\/(\d+)/.exec(pathname);
+        if (work_id)
+        {
+            return work_id[1];
+        }
+        else
+        {
+            return null;
+        }
+    }
+    else if (pathname.includes("users"))
+    {
+        return pathname;
+    }
+    return null;
+}
+
+
+function blacklistAO3Author(event)
+{
+    var pathname;
+    pathname = event.userInfo["pathname"];
+    if (pathname.indexOf("/users/") === 0)
+    {
+        var target_id = extractAO3WorkIDFromPathname(pathname);
+        if (target_id)
+        {
+            blacklist["ao3_authors"][pathname] = 1;
+            localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+            notifyAllClients(blacklist, "blacklist-updated");
+        }
+
+    }
+}
+
+function blacklistAO3Story(event)
+{
+    var pathname;
+    var target_id;
+    pathname = event.userInfo["pathname"];
+    if (pathname.indexOf("/works/") === 0)
+    {
+        target_id = extractAO3WorkIDFromPathname(pathname);
+        console.log(pathname, target_id);
+        if (target_id)
+        {
+            blacklist["ao3_stories"][target_id] = 1;
+            localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+            notifyAllClients(blacklist, "blacklist-updated");
+        }
+        else
+        {
+            console.log("Failed to blacklist due to nonexistent target_id");
+        }
+    }
+}
+
+
+function unblacklistAO3Story(event)
+{
+    var pathname;
+    var target_id;
+    pathname = event.userInfo["pathname"];
+    if (pathname.indexOf("/works/") === 0)
+    {
+        target_id = extractAO3WorkIDFromPathname(pathname);
+        if (target_id && (target_id in blacklist["ao3_stories"]))
+        {
+            delete blacklist["ao3_stories"][target_id];
+            localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+            notifyAllClients(blacklist, "blacklist-updated");
+        }
+        else
+        {
+            console.log("Failed to unblacklist due to nonexistent target_id");
+        }
+    }
+}
+
+function unblacklistAO3Author(event)
+{
+    var pathname;
+    var target_id;
+    pathname = event.userInfo["pathname"];
+    if (pathname.indexOf("/users/") === 0)
+    {
+        target_id = extractAO3WorkIDFromPathname(pathname);
+        if (target_id && (target_id in blacklist["ao3_authors"]))
+        {
+            delete blacklist["ao3_authors"][target_id];
+            localStorage.blacklist = JSON.stringify(blacklist); // WARNING: this is a race condition if you have multiple tabs open and blacklist stuff at the same time
+            notifyAllClients(blacklist, "blacklist-updated");
+        }
+
+    }
+}
+
+function dispatchBlacklistCommand(event, baseURI)
+{
+    var dispatch_table = {
+        "www.fanfiction.net":{
+            "blacklist-story":blacklistFFNetStory,
+            "blacklist-author":blacklistFFNetAuthor,
+            "unblacklist-story":unblacklistFFNetStory,
+            "unblacklist-author":unblacklistFFNetAuthor
+        },
+        "archiveofourown.org":{
+            "blacklist-story":blacklistAO3Story,
+            "blacklist-author":blacklistAO3Author,
+            "unblacklist-story":unblacklistAO3Story,
+            "unblacklist-author":unblacklistAO3Author
+        }
+    };
+    var host = new URL(baseURI);
+    if (host && host.hostname && host.hostname in dispatch_table && event.command in dispatch_table[host.hostname])
+    {
+
+        return dispatch_table[host.hostname][event.command](event);
+    }
+}
+
+function performCommand(event) {
+
+    var baseURI = event.userInfo["baseURI"];
+    return dispatchBlacklistCommand(event, baseURI);
 }
