@@ -11,9 +11,9 @@
        <key>CFBundleVersion</key>
        <string>1</string>
        <key>CFBundleShortVersionString</key>
-       <string>0.1</string>
+       <string>0.2</string>
        <key>URL</key>
-       <string>https://github.com/isolinear/ffnetblacklist/releases/download/v0.1/FFNetBlacklist.safariextz</string>
+       <string>https://github.com/isolinear/ffnetblacklist/releases/download/0.2/FFNetBlacklist.safariextz</string>
      </dict>
    </array>
 </dict>
