@@ -60,10 +60,21 @@ function handleExtensionMessage(msg_event) {
                 var popup = document.createElement('div');
                 popup.id = 'ffmessage';
                 popup.innerHTML = "'" + msg_event.message["blacklist_raw"] + "'";
+                var actions = document.createElement('div');
+                actions.id = "ffactions";
+                popup.appendChild(actions);
+                var downloadLink = document.createElement("a");
+                var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(msg_event.message["blacklist_raw"]));
+                downloadLink.setAttribute("href",     dataStr     );
+                downloadLink.setAttribute("download", "blacklist.json");
+                downloadLink.id = "ffdownload";
+                downloadLink.innerHTML = "Download Backup";
+                actions.appendChild(downloadLink);
                 var body = document.getElementsByTagName('body')[0];
                 if (body)
                 {
                     body.insertBefore(popup, body.children[0]);
+                    // actions.insertBefore(downloadLink, actions.children[0]);
                 }
                 
             }
@@ -118,7 +129,7 @@ function checkForBlacklistedStoriesAO3(blacklist)
     {
         return;
     }
-    var storyNodesResult = document.evaluate("./ol/li[contains(@class, 'work')]", contentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE);
+    var storyNodesResult = document.evaluate("./ol/li[contains(@class, 'work') or contains(@class, 'bookmark')]", contentNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE);
     for (var i=0; i<storyNodesResult.snapshotLength; i++)
     {
         var storyNode = storyNodesResult.snapshotItem(i);
@@ -345,13 +356,13 @@ function extractAO3TargetStoryOrAuthorPath(target)
     }
     if (target.nodeName === "A")
     {
-        var storyNode = document.evaluate("./ancestor::li[contains(@class, 'work') and @role='article']", target, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+        var storyNode = document.evaluate("./ancestor::li[(contains(@class, 'work') or contains(@class, 'bookmark')) and @role='article']", target, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
         if (storyNode && (target.pathname.includes("/works/") || target.pathname.includes("/users/")))
             pathname = target.pathname;
     }
     else if (target.nodeName === "P" || target.nodeName === "BLOCKQUOTE")
     {
-        var storyLinkNode = document.evaluate("./ancestor::li[contains(@class, 'work') and @role='article']//h4/a[contains(@href, '/works/')]", target, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+        var storyLinkNode = document.evaluate("./ancestor::li[(contains(@class, 'work') or contains(@class, 'bookmark')) and @role='article']//h4/a[contains(@href, '/works/')]", target, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
         if (storyLinkNode)
         {
             pathname = storyLinkNode.pathname;

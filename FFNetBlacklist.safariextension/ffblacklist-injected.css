@@ -8,7 +8,12 @@
 
 #ffmessage 
 {
-    padding: 1em; 
-    font-family: sans-serif; 
-    background-color: white;
+    margin: 1em !important;
+    font-family: sans-serif !important;
+    background-color: white !important;
+}
+
+div#ffactions
+{
+    margin: 1em !important;
 }
