@@ -39,7 +39,43 @@ function runBlacklist()
     safari.self.tab.dispatchMessage("get-blacklist-reveal","");
 }
 
-function handleExtensionMessage(msg_event) {
+function createDownloadLink(id, title, data, filename)
+{
+
+    var downloadLink = document.createElement("a");
+    var dataStr = "data:text/json;charset=utf-8," + data;
+    downloadLink.setAttribute("href",     dataStr     );
+    downloadLink.setAttribute("download", filename);
+    downloadLink.id = id;
+    downloadLink.innerHTML = title;
+    return downloadLink;
+}
+
+
+
+function blacklistToSafariBlocklist(blacklist)
+{
+    var story_ids = Object.keys(blacklist['ao3_stories']);
+    var story_selectors = story_ids.map(
+        function(id) {
+            return "li#work_"+id;
+        }
+    );
+    var block_rule = {
+        "trigger": {
+            "url-filter": ".*",
+            "if-domain":["*archiveofourown.org"]
+        },
+        "action": {
+            "type": "css-display-none",
+            "selector": story_selectors.join(", ")
+        }
+    };
+    return JSON.stringify([block_rule]);
+}
+
+function handleExtensionMessage(msg_event)
+{
 
     if (window.top === window)
     {
@@ -63,13 +99,11 @@ function handleExtensionMessage(msg_event) {
                 var actions = document.createElement('div');
                 actions.id = "ffactions";
                 popup.appendChild(actions);
-                var downloadLink = document.createElement("a");
-                var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(msg_event.message["blacklist_raw"]));
-                downloadLink.setAttribute("href",     dataStr     );
-                downloadLink.setAttribute("download", "blacklist.json");
-                downloadLink.id = "ffdownload";
-                downloadLink.innerHTML = "Download Backup";
+                var downloadLink = createDownloadLink("ffdownload", "Download Backup", encodeURIComponent(msg_event.message["blacklist_raw"]), "blacklist.json")
                 actions.appendChild(downloadLink);
+                var exportLink = createDownloadLink("ffexportsafari", "Export Safari", encodeURIComponent(blacklistToSafariBlocklist(JSON.parse(msg_event.message["blacklist_raw"]))), "blockerList.json")
+                actions.appendChild(exportLink);
+
                 var body = document.getElementsByTagName('body')[0];
                 if (body)
                 {

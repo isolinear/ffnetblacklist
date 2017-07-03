@@ -17,3 +17,9 @@ div#ffactions
 {
     margin: 1em !important;
 }
+
+div#ffactions a
+{
+    margin-right: 2em !important;
+    margin-left: 2em !important;
+}
