@@ -40,7 +40,7 @@ function settingChange(event)
         var data = {};
         if (event.newValue)
         {
-            data = {"blacklist_raw":localStorage.getItem("blacklist"), "show":true};
+            data = {"blacklist_raw":localStorage.getItem("blacklist"), "show":true, "blacklist_content_blocker":JSON.stringify(blacklistToSafariBlocklist(blacklist))};
         }
         else
         {
@@ -396,4 +396,25 @@ function performCommand(event) {
 
     var baseURI = event.userInfo["baseURI"];
     return dispatchBlacklistCommand(event, baseURI);
+}
+
+function blacklistToSafariBlocklist(blacklist)
+{
+    var story_ids = Object.keys(blacklist['ao3_stories']);
+    var story_selectors = story_ids.map(
+        function(id) {
+            return "li#work_"+id;
+        }
+    );
+    var block_rule = {
+        "trigger": {
+            "url-filter": ".*",
+            "if-domain":["*archiveofourown.org"]
+        },
+        "action": {
+            "type": "css-display-none",
+            "selector": story_selectors.join(", ")
+        }
+    };
+    return [block_rule];
 }

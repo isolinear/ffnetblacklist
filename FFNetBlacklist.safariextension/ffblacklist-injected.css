@@ -4,6 +4,7 @@
 
 .ffblacklist-grayout {
     background-color: #ccc !important;
+    /*display: block !important;*/
 }
 
 #ffmessage 

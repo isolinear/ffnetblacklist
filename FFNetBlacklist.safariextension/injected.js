@@ -52,27 +52,27 @@ function createDownloadLink(id, title, data, filename)
 }
 
 
-
-function blacklistToSafariBlocklist(blacklist)
-{
-    var story_ids = Object.keys(blacklist['ao3_stories']);
-    var story_selectors = story_ids.map(
-        function(id) {
-            return "li#work_"+id;
-        }
-    );
-    var block_rule = {
-        "trigger": {
-            "url-filter": ".*",
-            "if-domain":["*archiveofourown.org"]
-        },
-        "action": {
-            "type": "css-display-none",
-            "selector": story_selectors.join(", ")
-        }
-    };
-    return JSON.stringify([block_rule]);
-}
+//
+// function blacklistToSafariBlocklist(blacklist)
+// {
+//     var story_ids = Object.keys(blacklist['ao3_stories']);
+//     var story_selectors = story_ids.map(
+//         function(id) {
+//             return "li#work_"+id;
+//         }
+//     );
+//     var block_rule = {
+//         "trigger": {
+//             "url-filter": ".*",
+//             "if-domain":["*archiveofourown.org"]
+//         },
+//         "action": {
+//             "type": "css-display-none",
+//             "selector": story_selectors.join(", ")
+//         }
+//     };
+//     return JSON.stringify([block_rule]);
+// }
 
 function handleExtensionMessage(msg_event)
 {
@@ -101,7 +101,7 @@ function handleExtensionMessage(msg_event)
                 popup.appendChild(actions);
                 var downloadLink = createDownloadLink("ffdownload", "Download Backup", encodeURIComponent(msg_event.message["blacklist_raw"]), "blacklist.json")
                 actions.appendChild(downloadLink);
-                var exportLink = createDownloadLink("ffexportsafari", "Export Safari", encodeURIComponent(blacklistToSafariBlocklist(JSON.parse(msg_event.message["blacklist_raw"]))), "blockerList.json")
+                var exportLink = createDownloadLink("ffexportsafari", "Export Safari", encodeURIComponent(msg_event.message['blacklist_content_blocker']), "blockerList.json")
                 actions.appendChild(exportLink);
 
                 var body = document.getElementsByTagName('body')[0];
